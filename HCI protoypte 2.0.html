@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Elderly Health Monitoring & Assistance (Prototype)</title>
+  <style>
+    :root{
+      --bg:#f6f9fb; --card:#ffffff; --accent:#0b75c9; --accent-2:#0a5a9a; --danger:#d9534f; --muted:#5b6b77;
+      --radius:14px; --pad:18px; --large:20px;
+      --base-font:16px;
+    }
+    html { font-size: var(--base-font); }
+    body{font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:var(--bg); color:#0b1b2b; margin:0; padding:20px; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; cursor:none;}
+    .cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 30px;
+  height: 30px;
+  border: 2px solid black;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s ease, width 0.2s ease, height 0.2s ease, background 0.2s ease;
+}
+
+.cursor.active {
+  width: 60px;
+  height: 60px;
+  background: rgba(0,0,0,0.1);
+}
+    .wrap{max-width:1100px; margin:0 auto;}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+    header h1{font-size:1.5rem;margin:0}
+    .controls{margin-left:auto;display:flex;gap:8px}
+    button, input[type="button"], select{font-size:1rem;padding:10px 12px;border-radius:10px;border:1px solid rgba(11,27,43,0.12);background:var(--card);cursor:pointer}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+    .card{background:var(--card);border-radius:var(--radius);padding:var(--pad);box-shadow:0 6px 18px rgba(11,27,43,0.06)}
+    h2{margin:0 0 10px 0;font-size:1.1rem}
+    .reminder-list{display:flex;flex-direction:column;gap:8px}
+    .reminder{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;border:1px solid rgba(11,27,43,0.04)}
+    .reminder .meta{display:flex;gap:8px;align-items:center}
+    label{display:block;margin-bottom:6px}
+    input[type="text"], input[type="time"], input[type="number"], select, textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(11,27,43,0.08);font-size:1rem}
+    .small{font-size:0.9rem;color:var(--muted)}
+    .badge{background:var(--accent);color:white;padding:6px 10px;border-radius:10px;font-weight:600}
+    .stat{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px}
+    .stat .value{font-size:1.25rem;font-weight:700}
+    .health-list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .health-item{background:linear-gradient(180deg,#fff,#f8fbff);padding:12px;border-radius:10px;border:1px solid rgba(11,27,43,0.03)}
+    footer{margin-top:18px;text-align:center;color:var(--muted)}
+    /* Accessibility helpers */
+    .big-text{font-size:1.25rem}
+    .controls .btn-contrast{background:#000;color:#fff}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+    details div.small{font-size:0.95rem; color: #222; transition: font-size 0.2s ease, color 0.2s ease;}
+    .zoomed-text{ font-size:1.6rem !important; line-height:1.4 !important; }
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    /* High Contrast (default off) - class toggles on <body> */
+    body.high-contrast { background-color: #000 !important; color: #ffea00 !important; }
+    body.high-contrast .card { background-color:#111 !important; color:#ffea00 !important; border:1px solid #ffea00 !important; box-shadow:none !important; }
+    body.high-contrast header, body.high-contrast footer { background-color:#ffea00 !important; color:#000 !important; }
+    body.high-contrast button { background-color:#ffea00 !important; color:#000 !important; border-color:#000 !important; }
+    body.high-contrast input, body.high-contrast textarea, body.high-contrast select { background:#111 !important; color:#ffea00 !important; border-color:#ffea00 !important; }
+    body.comfort {
+  --bg: #f8f3e3;
+  --card: #fffaf0;
+  --accent: #c97b33;
+  --accent-2: #a05a1a;
+  --text: #3b2f2f;
+}
+
+body.comfort * {
+  transition: background-color 0.3s, color 0.3s;
+}
+
+  </style>
+</head>
+<body>
+
+
+  <div class="wrap">
+    <header>
+      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cpath fill='%230b75c9' d='M12 2a5 5 0 00-5 5v2H6a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2v-6a2 2 0 00-2-2h-1V7a5 5 0 00-5-5z'/%3E%3Ccircle fill='%23fff' cx='12' cy='11' r='2'/%3E%3C/svg%3E" alt="logo" width="48" height="48">
+      <div>
+        <h1>Elderly Health Monitoring & Assistance</h1>
+        <div class="small">Medication reminders · Sleep · Blood Pressure · SpO₂ · Heart Rate · Accessible info</div>
+      </div>
+      <div class="controls">
+        <button id="increaseText" title="Increase text size">A+</button>
+        <button id="decreaseText" title="Decrease text size">A-</button>
+        <button id="toggleContrast" class="btn-contrast" title="Toggle high contrast">High Contrast</button>
+        <button id="comfortBtn" title="Comfort mode">Comfort Mode</button>
+      </div>
+    </header>
+
+    <main class="grid" role="main">
+      <section>
+        <div class="card" aria-labelledby="meds-title">
+          <h2 id="meds-title">Medication Reminder Dashboard <span class="small">(click a reminder to edit)</span></h2>
+
+          <form id="medForm" aria-label="Add medication reminder">
+            <div style="display:grid;grid-template-columns:1fr 140px;gap:8px;align-items:end;">
+              <div>
+                <label for="medName">Medication name</label>
+                <input id="medName" type="text" placeholder="e.g., Aspirin 81mg" required />
+              </div>
+              <div>
+                <label for="medTime">Time</label>
+                <input id="medTime" type="time" required />
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 120px;gap:8px;margin-top:8px;">
+              <div>
+                <label for="medDosage">Dosage / Notes</label>
+                <input id="medDosage" type="text" placeholder="1 tablet, with food" />
+              </div>
+              <div>
+                <label for="medRepeat">Repeat</label>
+                <select id="medRepeat">
+                  <option value="daily">Daily</option>
+                  <option value="once">Once</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button type="submit" id="addMed">Add reminder</button>
+              <button type="button" id="clearMeds">Clear all</button>
+            </div>
+          </form>
+
+          <div style="margin-top:12px;">
+            <div id="reminders" class="reminder-list" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;" aria-labelledby="health-title">
+          <h2 id="health-title">Personal Health Dashboard</h2>
+          <div class="health-list" role="list">
+            <div class="health-item" role="listitem">
+              <div class="stat" aria-label="sleep hours">
+                <div>
+                  <div class="small">Sleep (last night)</div>
+                  <div class="value" id="sleepVal">7.5 h</div>
+                </div>
+                <div>
+                  <button id="logSleep">Log</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="health-item" role="listitem">
+              <div class="stat" aria-label="blood pressure">
+                <div>
+                  <div class="small">Blood Pressure</div>
+                  <div class="value" id="bpVal">118/76 mmHg</div>
+                </div>
+                <div>
+                  <button id="logBP">Log</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="health-item" role="listitem">
+              <div class="stat" aria-label="spo2">
+                <div>
+                  <div class="small">Blood Oxygen (SpO₂)</div>
+                  <div class="value" id="spo2Val">97%</div>
+                </div>
+                <div>
+                  <button id="logSpO2">Log</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="health-item" role="listitem">
+              <div class="stat" aria-label="heart rate">
+                <div>
+                  <div class="small">Heart Rate</div>
+                  <div class="value" id="hrVal">72 bpm</div>
+                </div>
+                <div>
+                  <button id="logHR">Log</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <label for="notes">Notes for caregiver (optional)</label>
+            <textarea id="notes" rows="3" placeholder="e.g., Took meds at 9:00; felt dizzy at 14:00"></textarea>
+            <div style="display:flex;justify-content:flex-end;margin-top:8px;"><button id="saveNotes">Save notes</button></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;" aria-labelledby="alerts-title">
+          <h2 id="alerts-title">Live Alerts & Announcements</h2>
+          <div id="alerts" aria-live="assertive" class="small">No alerts</div>
+        </div>
+      </section>
+
+      <aside>
+        <div class="card" aria-labelledby="assist-title">
+          <h2 id="assist-title">Quick Actions</h2>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button id="callCaregiver">Call caregiver</button>
+            <button id="speakNotes">Read notes aloud</button>
+            <button id="exportData">Export data (JSON)</button>
+            <button id="simulateAlert" style="background:var(--danger);color:#fff">Simulate emergency</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;" aria-labelledby="info-title">
+          <h2 id="info-title">Accessible Health Info</h2>
+          <p class="small">Simple, clear guidance for elderly users. Tap any article to expand. Use the Zoom Text button to enlarge a paragraph.</p>
+          <div id="infoList">
+            <details>
+              <summary>How to take medication safely</summary>
+              <div class="small">Always read the label. Take with water unless instructed otherwise. If you miss a dose, follow the instructions on the leaflet or ask caregiver.</div>
+              <div style="margin-top:6px;"><button class="zoomTextBtn">Zoom Text</button></div>
+            </details>
+            <details>
+              <summary>Recognising signs of low oxygen (SpO₂)</summary>
+              <div class="small">Shortness of breath, confusion, faster breathing. Seek medical help if SpO₂ &lt; 92%.</div>
+              <div style="margin-top:6px;"><button class="zoomTextBtn">Zoom Text</button></div>
+            </details>
+            <details>
+              <summary>When to call for help</summary>
+              <div class="small">Severe chest pain, sudden confusion, difficulty speaking, sudden weakness — call emergency services immediately.</div>
+              <div style="margin-top:6px;"><button class="zoomTextBtn">Zoom Text</button></div>
+            </details>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;text-align:center" aria-hidden="false">
+          <div class="small">Prototype — data is stored locally in your browser. Works offline after first load.</div>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <div class="small">Built for accessibility: large fonts, high contrast toggle, keyboard-friendly controls, and screen-reader announcements.</div>
+    </footer>
+  </div>
+
+  <div class="cursor"></div>
+
+  <script>
+    // --------------------------
+    // State + helpers (unchanged functionality)
+    // --------------------------
+    const STORAGE_KEY = 'elderly-proto-v1';
+    const defaultState = { reminders: [], notes: '', health: { sleep:7.5, bp:'118/76', spo2:97, hr:72 } };
+    let state = loadState();
+
+    function loadState(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultState }catch(e){return defaultState} }
+    function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+    // Announce helper
+    const alertsEl = document.getElementById('alerts');
+    function announce(msg){ alertsEl.textContent = msg; }
+
+    // --------------------------
+    // High Contrast (robust)
+    // --------------------------
+    const contrastButton = document.getElementById('toggleContrast');
+    contrastButton.addEventListener('click', () => {
+      document.body.classList.toggle('high-contrast');
+      // store preference
+      localStorage.setItem('elderly_high_contrast', document.body.classList.contains('high-contrast') ? '1' : '0');
+    });
+    // apply saved preference on load
+    if(localStorage.getItem('elderly_high_contrast') === '1'){
+      document.body.classList.add('high-contrast');
+    }
+
+    // --------------------------
+    // Zoom In / Zoom Out (changes root font-size)
+    // --------------------------
+    const INCREMENT = 2; // px step
+    const MIN_FONT = 12;
+    const MAX_FONT = 28;
+    // initialize base font from CSS var
+    let baseFont = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--base-font')) || 16;
+    // try restore saved zoom
+    const savedFont = parseInt(localStorage.getItem('elderly_base_font'));
+    if(!isNaN(savedFont)){ baseFont = savedFont; document.documentElement.style.setProperty('--base-font', baseFont + 'px'); }
+
+    document.getElementById('increaseText').addEventListener('click', ()=>{
+      if(baseFont + INCREMENT <= MAX_FONT){
+        baseFont += INCREMENT;
+        document.documentElement.style.setProperty('--base-font', baseFont + 'px');
+        localStorage.setItem('elderly_base_font', baseFont);
+      }
+    });
+    document.getElementById('decreaseText').addEventListener('click', ()=>{
+      if(baseFont - INCREMENT >= MIN_FONT){
+        baseFont -= INCREMENT;
+        document.documentElement.style.setProperty('--base-font', baseFont + 'px');
+        localStorage.setItem('elderly_base_font', baseFont);
+      }
+    });
+
+    // --------------------------
+    // Reminders (orig behavior preserved)
+    // --------------------------
+    const remindersEl = document.getElementById('reminders');
+    const medForm = document.getElementById('medForm');
+
+    function renderReminders(){ remindersEl.innerHTML=''; if(!state.reminders.length){ remindersEl.innerHTML='<div class=\"small\">No reminders yet</div>'; return }
+      state.reminders.forEach((r, idx)=>{
+        const div = document.createElement('div'); div.className='reminder'; div.tabIndex=0; div.setAttribute('role','button');
+        div.innerHTML = `<div class=\"meta\"><div><strong>${escapeHtml(r.name)}</strong><div class=\"small\">${r.time} · ${r.repeat} · ${escapeHtml(r.dosage||'')}</div></div></div><div style=\"display:flex;gap:8px\"><button data-idx=\"${idx}\" class=\"markTaken\">Taken</button><button data-idx=\"${idx}\" class=\"delete\">Delete</button></div>`;
+        remindersEl.appendChild(div);
+      });
+    }
+
+    medForm.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const name = document.getElementById('medName').value.trim();
+      const time = document.getElementById('medTime').value;
+      const dosage = document.getElementById('medDosage').value.trim();
+      const repeat = document.getElementById('medRepeat').value;
+      if(!name || !time) return;
+      state.reminders.push({name,time,dosage,repeat,id:Date.now()}); saveState(); renderReminders(); scheduleReminder(state.reminders[state.reminders.length-1]); medForm.reset(); announce('Reminder added');
+    });
+
+    remindersEl.addEventListener('click', (e)=>{
+      const idx = e.target.dataset.idx; if(idx===undefined) return;
+      if(e.target.classList.contains('delete')){ state.reminders.splice(idx,1); saveState(); renderReminders(); announce('Reminder deleted'); }
+      if(e.target.classList.contains('markTaken')){ announce('Marked as taken'); }
+    });
+
+    document.getElementById('clearMeds').addEventListener('click', ()=>{ if(confirm('Clear all reminders?')){ state.reminders=[]; saveState(); renderReminders(); announce('All reminders cleared'); } });
+
+    // Scheduling reminders (prototype): use time comparison every 30s
+    function scheduleAll(){ state.reminders.forEach(scheduleReminder); }
+    function scheduleReminder(rem){ /* no precise scheduling across reloads in prototype */ }
+
+    function checkRemindersNow(){ const now = new Date(); const hhmm = now.toTimeString().slice(0,5);
+      state.reminders.forEach(r=>{
+        if(r.lastNotified===hhmm) return; // avoid duplicate within same minute
+        if(r.time === hhmm){ r.lastNotified = hhmm; saveState(); triggerNotification(`Time to take ${r.name}`, `${r.dosage||''}`); announce(`Reminder: ${r.name} at ${r.time}`); }
+      });
+    }
+    setInterval(checkRemindersNow, 30000); checkRemindersNow();
+
+    function triggerNotification(title, body){ if('Notification' in window){ if(Notification.permission==='granted'){ new Notification(title,{body}); } else if(Notification.permission!=='denied'){ Notification.requestPermission().then(p=>{ if(p==='granted') new Notification(title,{body}); }); } }
+      // also show on-screen
+      const el = document.createElement('div'); el.className='card'; el.style.marginTop='8px'; el.innerHTML=`<strong>${escapeHtml(title)}</strong><div class=\"small\">${escapeHtml(body)}</div>`; document.querySelector('main section').prepend(el); setTimeout(()=>el.remove(),10000);
+    }
+
+    // --------------------------
+    // Health metrics logging (preserved)
+    // --------------------------
+    function renderHealth(){ document.getElementById('sleepVal').textContent = state.health.sleep + ' h'; document.getElementById('bpVal').textContent = state.health.bp; document.getElementById('spo2Val').textContent = state.health.spo2 + '%'; document.getElementById('hrVal').textContent = state.health.hr + ' bpm'; }
+
+    document.getElementById('logSleep').addEventListener('click', ()=>{
+      const v = prompt('Enter hours slept last night (e.g., 7.5):', state.health.sleep); if(v===null) return; const num = parseFloat(v); if(!isNaN(num)){ state.health.sleep = num; saveState(); renderHealth(); announce('Sleep logged'); }
+    });
+    document.getElementById('logBP').addEventListener('click', ()=>{
+      const v = prompt('Enter blood pressure (systolic/diastolic) e.g., 120/80:', state.health.bp); if(v===null) return; state.health.bp = v; saveState(); renderHealth(); announce('Blood pressure logged');
+    });
+    document.getElementById('logSpO2').addEventListener('click', ()=>{
+      const v = prompt('Enter SpO2 percentage (e.g., 97):', state.health.spo2); if(v===null) return; const n = parseInt(v); if(!isNaN(n)){ state.health.spo2 = n; saveState(); renderHealth(); announce('SpO2 logged'); }
+    });
+    document.getElementById('logHR').addEventListener('click', ()=>{
+      const v = prompt('Enter heart rate (bpm):', state.health.hr); if(v===null) return; const n = parseInt(v); if(!isNaN(n)){ state.health.hr = n; saveState(); renderHealth(); announce('Heart rate logged'); }
+    });
+
+    document.getElementById('saveNotes').addEventListener('click', ()=>{ state.notes = document.getElementById('notes').value; saveState(); announce('Notes saved'); });
+
+    // Quick actions
+    document.getElementById('callCaregiver').addEventListener('click', ()=>{ const num = prompt('Enter caregiver phone number to call (demonstration):','+60'); if(num) alert('Calling ' + num + '... (demo)'); });
+    document.getElementById('speakNotes').addEventListener('click', ()=>{ const t = document.getElementById('notes').value || 'No notes saved'; speakText(t); });
+    document.getElementById('exportData').addEventListener('click', ()=>{ const data = JSON.stringify(state, null, 2); const blob = new Blob([data], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download='elderly-data.json'; a.click(); URL.revokeObjectURL(url); });
+    document.getElementById('simulateAlert').addEventListener('click', ()=>{ triggerNotification('Emergency simulated','Activate emergency protocol and call caregiver'); announce('Emergency simulated — trigger sent'); });
+
+    // --------------------------
+    // Accessible Health Info: Zoom Text buttons
+    // --------------------------
+    document.querySelectorAll('.zoomTextBtn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const details = e.target.closest('details');
+        if(!details) return;
+        const p = details.querySelector('div.small');
+        if(!p) return;
+        // toggle zoom class
+        if(p.classList.contains('zoomed-text')){
+          p.classList.remove('zoomed-text');
+          // store state (optional) - not persisted here
+        } else {
+          // remove zoom on other paragraphs (ensure only one zoomed at a time if desired)
+          //document.querySelectorAll('#infoList div.small.zoomed-text').forEach(x=>x.classList.remove('zoomed-text'));
+          p.classList.add('zoomed-text');
+        }
+      });
+      // make keyboard accessible (Enter / Space)
+      btn.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); btn.click(); } });
+    });
+
+    // Articles read aloud - keep original readArticle behavior removed because replaced with zoom buttons
+    // (If you want both read and zoom, we can add a small speaker icon. For now Read -> Zoom as requested.)
+
+    function speakText(text){ if('speechSynthesis' in window){ const u = new SpeechSynthesisUtterance(text); u.lang='en-US'; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } else alert(text); }
+
+    // Simulate health updates (optional): small random drift every 30s to show dynamic data
+    setInterval(()=>{
+      state.health.hr = Math.max(50, Math.min(110, state.health.hr + (Math.random()*4-2)|0));
+      state.health.spo2 = Math.max(88, Math.min(100, state.health.spo2 + (Math.random()*2-1)|0));
+      saveState(); renderHealth(); }, 30000);
+
+    // Helpers
+    function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // Initial render
+    document.getElementById('notes').value = state.notes || '';
+    renderReminders(); renderHealth(); scheduleAll();
+
+    // basic keyboard access: Enter on reminder opens prompt to edit
+    remindersEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ const idx = [...remindersEl.children].indexOf(e.target); if(idx>=0){ const r = state.reminders[idx]; const name = prompt('Edit name', r.name); if(name!==null){ r.name = name; saveState(); renderReminders(); } } }});
+
+    // expose for debugging
+    window._elderlyProto = { state, saveState };
+
+    //cursor 
+  
+  const cursor = document.querySelector('.cursor');
+
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+  });
+
+  // 鼠标按下放大
+  document.addEventListener('mousedown', () => cursor.classList.add('active'));
+  document.addEventListener('mouseup', () => cursor.classList.remove('active'));
+
+  // Hover 到按钮或输入框时放大
+  document.querySelectorAll('button, input, select, a').forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.classList.add('active'));
+    el.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+  });
+
+  
+  
+  setInterval(()=>{
+    state.health.hr = Math.max(50, Math.min(110, state.health.hr + Math.round(Math.random() * 4 - 2)));
+    state.health.spo2 = Math.max(88, Math.min(100, state.health.spo2 + Math.round(Math.random() * 2 - 1)));
+    saveState();
+    renderHealth();
+  }, 30000);
+
+  
+  const comfortBtn = document.getElementById('comfortBtn');
+comfortBtn.addEventListener('click', () => {
+  document.body.classList.toggle('comfort');
+  localStorage.setItem('elderly_comfort', document.body.classList.contains('comfort') ? '1' : '0');
+});
+
+
+if (localStorage.getItem('elderly_comfort') === '1') {
+  document.body.classList.add('comfort');
+}
+
+
+
+  </script>
+</body>
+</html>
